@@ -405,9 +405,13 @@ Linux_Auto_Inspection/
 
 ---
 
-## 贡献
+## Contributing | 参与贡献
 
-欢迎提交 Issue 和 Pull Request。
+欢迎提交 Issue 和 Pull Request！详见 [CONTRIBUTING.md](CONTRIBUTING.md)
+
+```
+Fork → Clone → Branch → Commit → Push → Pull Request
+```
 
 ---
 
