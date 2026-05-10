@@ -1,170 +1,52 @@
 # Linux Auto Inspection
 
-**Linux 服务器一键巡检脚本** — 纯 Bash 编写，零依赖，自动生成高颜值 HTML 巡检报告。
+**Linux 服务器一键巡检脚本** — 纯 Bash 编写，零依赖，自动生成结构化 HTML 巡检报告。
 
-[![Shell](https://img.shields.io/badge/Shell-Bash-green)](https://www.gnu.org/software/bash/)
+[![Shell](https://img.shields.io/badge/Shell-Bash%204.0%2B-green)](https://www.gnu.org/software/bash/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Linux-orange)]()
+[![Version](https://img.shields.io/badge/Version-v2.4-blue)]()
 
 ---
 
 ## 功能概览
 
-一条命令完成服务器巡检，覆盖 **20+ 项检查维度**，输出标准化 HTML 报告。
+一条命令完成服务器巡检，覆盖 **17 大类 25+ 项检查维度**，输出可读性强的 HTML 报告。
 
 ```
-========================================
-  巡检完成: web-server-01
-  时间: 2026-04-08 10:30:00
-  警告数: 2
-  严重数: 0
-  报告: /tmp/inspect_report/inspect_web-server-01_20260408_103000.html
-========================================
+==============================================
+  Linux Inspection v2.4
+  Host: jum-dev
+  Time: 2026-05-10 20:34:46
+  Format: html  |  Verbose: off
+  Steps: 19
+==============================================
+[ 1/19] (  5%) 采集基本信息（主机/CPU/内存/网络/虚拟化）...
+[ 2/19] ( 10%) 检查 CPU 使用率与负载...
+[ 3/19] ( 15%) 检查内存与 Swap...
+...
+[19/19] (100%) 生成报告（html）...
+
+==============================================
+  Linux Inspection v2.4 - 巡检完成
+  Host: jum-dev
+  Steps: 19/19
+  Warnings: 2    Critical: 0
+  Elapsed: 0m12s
+  Format: html
+  Report: /tmp/inspect_report/inspect_jum-dev_20260510_203446.html
+==============================================
 ```
 
-### 报告效果
+### 报告样式（v2.4）
 
-报告采用现代卡片式设计，顶部 6 个概览指标，内容分区展示：
+参考 Token Insight 风格的现代 dashboard 排版：
 
-```
- ┌──────┬──────┬──────┬──────┬──────┬──────┐
- │ CPU  │ 内存 │ 磁盘 │ 负载 │ TCP  │ 警告 │
- │ 23%  │ 67%  │  0   │ 0.8  │ 156  │  2   │
- │  ●   │  ●   │  ●   │  ●   │  ●   │  ●   │
- └──────┴──────┴──────┴──────┴──────┴──────┘
-  绿色=正常    橙色=警告    红色=严重
-```
-
----
-
-## 检查维度
-
-### 基础信息
-| 检查项 | 说明 |
-|--------|------|
-| 主机信息 | 主机名、FQDN、IP 地址、操作系统、内核、架构 |
-| 硬件信息 | 厂商、型号、序列号、BIOS 版本 |
-| 虚拟化检测 | 自动识别 VMware / KVM / Hyper-V / Xen / 物理机 |
-| 运行状态 | 运行时间、启动时间、时区、当前登录用户 |
-| 进程概况 | 进程总数、线程总数 |
-
-### CPU & 负载
-| 检查项 | 说明 |
-|--------|------|
-| CPU 使用率 | **4 种采集方式自动降级**（top → mpstat → vmstat → /proc/stat） |
-| 系统负载 | 1 / 5 / 15 分钟负载，对比核数告警 |
-| 运行队列 | 当前运行中 / 总进程数 |
-| TOP 10 进程 | CPU 占用最高的 10 个进程 |
-
-### 内存 & Swap
-| 检查项 | 说明 |
-|--------|------|
-| 内存使用率 | 使用率 + `free` 详细输出 |
-| Swap 使用率 | Swap 总量 / 已用 / 使用率 |
-| TOP 10 进程 | 内存占用最高的 10 个进程 |
-
-### 磁盘
-| 检查项 | 说明 |
-|--------|------|
-| 空间使用率 | 所有挂载点，带进度条和状态徽章 |
-| Inode 使用率 | Inode 占用检查 |
-| 磁盘 I/O | iostat 统计 TPS / 读写速率 |
-| 大文件 TOP 10 | 扫描 >100M 的大文件 |
-| 近期大文件 | 7 天内修改的 >50M 文件 |
-| 目录大小 | `/tmp` 和 `/var/log` 大小 |
-
-### 文件描述符
-| 检查项 | 说明 |
-|--------|------|
-| 系统 FD | 当前值 / 最大值 / 使用率 |
-| TOP 5 进程 | FD 占用最多的 5 个进程 |
-
-### 网络
-| 检查项 | 说明 |
-|--------|------|
-| 网卡信息 | IP、MAC、速率、流量统计（RX/TX）、错误 / 丢包数 |
-| TCP 连接 | ESTABLISHED / TIME_WAIT / CLOSE_WAIT / SYN_RECV / LISTEN |
-| 监听端口 | 前 30 个监听端口 + 对应进程 |
-| 路由表 | `ip route` 路由条目 |
-| DNS / 网关 | DNS 服务器配置、默认网关 |
-
-### 进程
-| 检查项 | 说明 |
-|--------|------|
-| 僵尸进程 (Z) | 数量 + 详情列表 |
-| D 状态进程 | 不可中断睡眠进程检测 |
-| 长期运行进程 | 运行时间最长的 TOP 5 |
-
-### 服务状态
-| 检查项 | 说明 |
-|--------|------|
-| 关键服务 | **38 个常见服务**状态检测 |
-| 失败的服务 | `systemctl --failed` 输出 |
-
-<details>
-<summary>支持检测的服务列表（点击展开）</summary>
-
-`sshd` `crond` `cron` `rsyslog` `syslog-ng` `firewalld` `ufw` `chronyd` `ntpd` `systemd-timesyncd` `docker` `containerd` `kubelet` `nginx` `httpd` `apache2` `mysqld` `mariadb` `postgresql` `redis-server` `redis` `mongod` `elasticsearch` `php-fpm` `tomcat` `supervisord` `zabbix-agent` `zabbix-agent2` `node_exporter` `prometheus` `grafana-server` `haproxy` `keepalived` `named` `dnsmasq` `postfix` `dovecot` `vsftpd` `smbd`
-
-</details>
-
-### Docker 容器
-| 检查项 | 说明 |
-|--------|------|
-| 容器列表 | 名称、镜像、运行状态 |
-| 镜像列表 | 镜像名 + 大小（前 15） |
-| 磁盘占用 | `docker system df` |
-
-### 定时任务
-| 检查项 | 说明 |
-|--------|------|
-| 系统 crontab | `/etc/crontab` 和 `/etc/cron.d/` |
-| 用户 crontab | 所有用户的 crontab |
-
-### 安全检查
-| 检查项 | 说明 |
-|--------|------|
-| SSH 配置 | Root 登录、端口、最大认证次数、密钥认证 |
-| 账户审计 | UID=0 账户、可登录 Shell 账户数 |
-| 密码过期 | 即将过期 / 已过期账户 |
-| 登录记录 | 最近失败记录（前 10）+ 失败总次数 + 成功记录 |
-| 文件权限 | SUID 文件、全局可写文件扫描 |
-| 安全组件 | SELinux 状态、防火墙状态 |
-
-### 内核参数
-检查 **13 项关键 sysctl 参数**，含当前值和建议值：
-
-| 参数 | 说明 |
-|------|------|
-| `net.ipv4.tcp_syncookies` | TCP SYN Cookies |
-| `net.ipv4.ip_forward` | IP 转发 |
-| `net.ipv4.tcp_max_syn_backlog` | SYN 队列长度 |
-| `net.core.somaxconn` | Socket 最大连接队列 |
-| `net.ipv4.tcp_tw_reuse` | TIME_WAIT 重用 |
-| `net.ipv4.tcp_fin_timeout` | FIN 超时 |
-| `net.ipv4.tcp_keepalive_time` | Keepalive 时间 |
-| `net.core.netdev_max_backlog` | 网卡积压队列 |
-| `vm.swappiness` | Swap 倾向 |
-| `vm.overcommit_memory` | 内存过量分配 |
-| `fs.file-max` | 系统最大文件描述符 |
-| `net.ipv4.conf.all.rp_filter` | 反向路径过滤 |
-| `kernel.panic` | 内核 panic 重启 |
-
-### 系统更新
-| 检查项 | 说明 |
-|--------|------|
-| 可用更新 | yum / dnf / apt 可用更新数 |
-| 安全更新 | 安全相关更新数 |
-| 最近更新 | 上次安装/更新包时间 |
-
-### 日志检查
-| 检查项 | 说明 |
-|--------|------|
-| 系统日志 | error / fail / critical / panic / oom 关键字 |
-| OOM 事件 | dmesg 中 OOM 次数 |
-| 硬件错误 | dmesg 中 ECC / IO error / hardware error |
-| 认证日志 | auth.log / secure 异常记录 |
-| NTP 详情 | chrony sources 时间源信息 |
+- **顶部蓝色 banner** — 主机/IP/操作系统/内核/生成时间/工具版本 一行展示
+- **6 张概览卡片** — 左侧方形 SVG 图标 + 大数字 + 状态标签（CPU / 内存 / 磁盘告警 / 负载 / TCP 连接 / 警告）
+- **17 个编号章节** — 浅蓝色标题底栏 + 蓝色编号前缀，左侧深色侧栏导航 + 锚点跳转
+- **总体建议** — 短期/中期/长期 3 列卡片，根据告警动态生成
+- **打印友好** — `@media print` 完整样式
 
 ---
 
@@ -172,63 +54,165 @@
 
 ### 环境要求
 
-- Linux 系统（CentOS 7/8, RHEL 7/8/9, Ubuntu 18/20/22, Debian 10/11/12）
-- Bash 4.0+
+- Linux 系统（Rocky / RHEL / CentOS / Ubuntu / Debian / Kylin / SUSE）
+- **Bash 4.0+**（用到 here-string `<<<`、关联数组等特性）
 - root 权限（建议，部分检查项需要）
 
-### 使用方式
+### 安装
 
 ```bash
-# 1. 克隆仓库
 git clone https://github.com/Aidan-996/Linux_Auto_Inspection.git
-
-# 2. 赋权
 cd Linux_Auto_Inspection
 chmod +x linux_inspect.sh
-
-# 3. 执行巡检
-./linux_inspect.sh
-
-# 4. 查看报告（输出路径在终端最后几行）
-# 下载 /tmp/inspect_report/inspect_xxx.html 到本地浏览器打开
 ```
 
 ### 单行命令（无需克隆）
 
 ```bash
-curl -sO https://raw.githubusercontent.com/Aidan-996/Linux_Auto_Inspection/main/linux_inspect.sh && chmod +x linux_inspect.sh && ./linux_inspect.sh
+curl -sO https://raw.githubusercontent.com/Aidan-996/Linux_Auto_Inspection/main/linux_inspect.sh \
+  && chmod +x linux_inspect.sh \
+  && ./linux_inspect.sh --fast
 ```
+
+### 用法
+
+```bash
+# 完整巡检（含联网更新检查 + SSL + 大文件扫描，约 30-60 秒）
+./linux_inspect.sh
+
+# 快速模式（推荐日常巡检，约 8-15 秒）
+./linux_inspect.sh --fast
+
+# JSON 输出（对接 Prometheus / 监控平台）
+./linux_inspect.sh -f json -o /tmp/inspect.json
+
+# 自定义输出路径 + 详细日志
+./linux_inspect.sh -v -o /var/log/inspect.html
+
+# 查看帮助
+./linux_inspect.sh -h
+```
+
+### 命令行参数
+
+| 参数 | 说明 |
+|---|---|
+| `-o FILE` | 指定报告输出路径 |
+| `-f FORMAT` | 输出格式：`html`（默认）/ `json` |
+| `-v, --verbose` | 详细日志（含 debug 信息） |
+| `-q, --quiet` | 静默模式（仅错误输出） |
+| `--no-large-file-scan` | 跳过大文件扫描 |
+| `--skip-update-check` | 跳过包管理器联网检查（最慢的单步） |
+| `--skip-ssl-check` | 跳过 SSL 证书扫描 |
+| `--fast` | 快速模式 = 上面三个 skip 全开 |
+| `-h, --help` | 显示帮助 |
+
+### 退出码语义化
+
+| 退出码 | 含义 | 用途 |
+|---|---|---|
+| `0` | 正常 — 无警告无严重 | CI 通过 |
+| `1` | 有警告 | CI 警告（黄） |
+| `2` | 有严重告警 / 脚本错误 | CI 失败（红）|
+
+---
+
+## 检查维度（17 大类）
+
+### 1. 基本信息
+主机名、FQDN、IP、操作系统、内核、架构、运行时间、CPU 型号/核数、总内存、SELinux、防火墙、虚拟化（vmware/kvm/hyperv/xen）、厂商型号/序列号/BIOS。
+
+### 2. CPU & 负载
+CPU 使用率、1/5/15 分钟负载（对比核数告警）、CPU 占用 TOP 10 进程。
+
+### 3. 内存 & Swap
+字节级精确使用率、`free -h` 详情、内存占用 TOP 10 进程。
+
+### 4. 磁盘使用
+所有挂载点空间使用率（带进度条）、Inode 使用率、磁盘 I/O（iostat）、状态徽章。
+
+### 5. 大文件分析
+扫描 `>100M` 大文件 TOP 10、近 7 天修改的 `>50M` 文件 TOP 10（限定 `/var /home /opt /usr/local`）。
+
+### 6. 文件描述符
+系统 FD 使用率、TOP 5 占用进程。
+
+### 7. 网络状态
+网卡信息（IP/MAC/速率/RX/TX 流量/错误丢包）、TCP 连接（ESTABLISHED/TIME_WAIT/CLOSE_WAIT 等）、监听端口前 30、路由表、DNS/网关。
+
+### 8. 进程检查
+僵尸进程（Z）、D 状态进程、运行最长进程 TOP 5。
+
+### 9. 服务状态（38 个常见服务）
+sshd / crond / firewalld / ufw / chronyd / docker / containerd / kubelet / nginx / httpd / mysqld / mariadb / postgresql / redis / mongod / elasticsearch / php-fpm / tomcat / supervisord / zabbix-agent / node_exporter / prometheus / grafana-server / haproxy / keepalived / postfix / smbd ... 等。
+
+### 10. Docker 容器
+容器列表、镜像列表（前 15）、`docker system df` 磁盘占用。
+
+### 11. 定时任务
+系统 crontab（`/etc/crontab` + `/etc/cron.d/`）、所有用户 crontab。
+
+### 12. 安全检查
+SSH 配置（PermitRootLogin / Port / MaxAuthTries / PubkeyAuthentication）、UID=0 账户、空密码账户、密码即将/已过期账户、最近失败/成功登录记录、SUID/SGID/全局可写文件扫描。
+
+### 13. 内核参数（13 项 sysctl）
+`tcp_syncookies` / `ip_forward` / `tcp_max_syn_backlog` / `somaxconn` / `tcp_tw_reuse` / `tcp_fin_timeout` / `tcp_keepalive_time` / `netdev_max_backlog` / `swappiness` / `overcommit_memory` / `file-max` / `rp_filter` / `kernel.panic`。
+
+### 14. 系统更新
+yum / dnf / apt / zypper 多包管理器自动适配（Kylin/RHEL/Debian/SUSE），可用更新数 + 安全更新数 + 上次更新时间。
+
+### 15. SSL 证书 ⭐ v2.3+
+扫描 `/etc/letsencrypt/live`、`/etc/ssl/certs`、`/etc/pki/tls/certs`、`/etc/nginx/ssl` 等路径，提取 CN / 到期时间 / 剩余天数，剩余 < 30 天告警。
+
+### 16. 系统日志
+最近异常（error/fail/critical/panic/oom）、OOM 事件次数、硬件错误（dmesg ECC/IO error）、认证日志异常、NTP 时间源详情。
+
+### 17. 总体建议 ⭐ v2.4
+基于警告数据动态生成短期（1-3 天）/ 中期（1-4 周）/ 长期（1-6 个月）维护建议。
 
 ---
 
 ## 配置说明
 
-脚本顶部有集中配置区，按实际环境调整：
+脚本顶部集中配置区，按实际环境调整：
 
 ```bash
-# 阈值设置
-CPU_WARN=80          # CPU 使用率告警阈值(%)
-MEM_WARN=85          # 内存使用率告警阈值(%)
-DISK_WARN=85         # 磁盘使用率告警阈值(%)
-INODE_WARN=85        # Inode 使用率告警阈值(%)
-SWAP_WARN=50         # Swap 使用率告警阈值(%)
-FD_WARN=80           # 文件描述符使用率告警阈值(%)
-LOAD_WARN_FACTOR=2   # 负载告警倍数(相对于CPU核数)
-ZOMBIE_WARN=0        # 僵尸进程告警阈值
-LOG_LINES=20         # 日志检查行数
-LARGE_FILE_SIZE="+100M"  # 大文件扫描阈值
+# 阈值
+CPU_WARN=80
+MEM_WARN=85
+DISK_WARN=85
+INODE_WARN=85
+SWAP_WARN=50
+FD_WARN=80
+LOAD_WARN_FACTOR=2
+CRIT_OFFSET=10                  # 严重 = 警告 + 10
+CONN_CLOSE_WAIT_THRESHOLD=50    # CLOSE_WAIT 偏高阈值
 
-# 报告输出目录
+# 列表数量
+TOP_N=10
+FD_TOP_N=5
+LOG_LINES=20
+
+# 大文件
+LARGE_FILE_SIZE="+100M"
+RECENT_FILE_DAYS=7
+RECENT_FILE_SIZE="+50M"
+LARGE_FILE_SEARCH_PATHS="/var /home /opt /usr/local"
+
+# SSL 证书
+SSL_CERT_DAYS_WARN=30
+
+# 输出（也可用 -o / 环境变量 INSPECT_REPORT_DIR 覆盖）
 REPORT_DIR="/tmp/inspect_report"
 ```
 
-### 三级告警机制
+### 三级告警
 
 | 级别 | 条件 | 颜色 |
-|------|------|------|
-| 正常 | < 阈值 | 绿色 |
-| 警告 | >= 阈值 | 橙色 |
-| 严重 | >= 阈值 + 10% | 红色 |
+|---|---|---|
+| 正常 | < 警告阈值 | 绿色 |
+| 警告 | >= 警告阈值 | 橙色 |
+| 严重 | >= 警告阈值 + `CRIT_OFFSET`（默认 10） | 红色 |
 
 ---
 
@@ -238,11 +222,40 @@ REPORT_DIR="/tmp/inspect_report"
 
 ```bash
 # crontab -e
-# 每天早上 8 点巡检并发送报告
-0 8 * * * /opt/scripts/linux_inspect.sh && \
+0 8 * * * /opt/scripts/linux_inspect.sh --fast && \
   REPORT=$(ls -t /tmp/inspect_report/*.html | head -1) && \
   echo "巡检报告见附件" | mail -s "$(hostname) 每日巡检报告" \
-  -a "$REPORT" admin@company.com
+  -a "$REPORT" admin@example.com
+```
+
+### CI/CD 集成（基于 exit code）
+
+```bash
+# Jenkins / GitLab CI
+./linux_inspect.sh --fast
+case $? in
+  0) echo "✅ 巡检通过" ;;
+  1) echo "⚠️ 有警告，请查看报告" ;;
+  2) echo "❌ 严重告警，立即处理" && exit 1 ;;
+esac
+```
+
+### JSON 对接监控平台
+
+```bash
+./linux_inspect.sh -f json -o /tmp/r.json
+# 输出示例
+{
+  "version": "v2.4",
+  "host": { "hostname": "...", "ip": "...", "os": "...", ... },
+  "metrics": { "cpu_usage_pct": 12, "mem_usage_pct": 34, ... },
+  "ssl": { "total": 4, "expiring_in_30_days": 2, "expired": 0 },
+  "result": { "warnings": 2, "critical": 0, "exit_code": 1 }
+}
+
+# Push 到 Prometheus pushgateway / Telegram bot / 自建 API
+curl -X POST https://your-monitor.example.com/api/inspect \
+  -H "Content-Type: application/json" -d @/tmp/r.json
 ```
 
 ### 批量巡检
@@ -251,112 +264,53 @@ REPORT_DIR="/tmp/inspect_report"
 #!/bin/bash
 SERVERS="192.168.1.10 192.168.1.11 192.168.1.12"
 mkdir -p ./reports
-
 for ip in $SERVERS; do
     echo "=== 巡检: $ip ==="
-    ssh root@$ip 'bash -s' < linux_inspect.sh
-    scp root@$ip:/tmp/inspect_report/*.html ./reports/
+    ssh root@$ip 'bash -s -- --fast' < linux_inspect.sh
+    scp root@$ip:/tmp/inspect_report/*.html ./reports/${ip}.html
 done
-
-echo "所有巡检完成，报告保存在 ./reports/"
-```
-
-### Ansible 批量巡检
-
-```yaml
-# inspect.yml
-- hosts: all
-  become: yes
-  tasks:
-    - name: Upload inspect script
-      copy:
-        src: linux_inspect.sh
-        dest: /tmp/linux_inspect.sh
-        mode: '0755'
-
-    - name: Run inspection
-      shell: /tmp/linux_inspect.sh
-      register: result
-      ignore_errors: yes
-
-    - name: Fetch report
-      fetch:
-        src: "{{ result.stdout_lines[-2] | regex_replace('.*报告: ', '') | trim }}"
-        dest: "./reports/{{ inventory_hostname }}/"
-        flat: yes
 ```
 
 ### 企业微信告警
 
-在脚本末尾追加：
-
 ```bash
 if (( CRITICAL_COUNT > 0 )); then
-    curl -s -X POST "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=YOUR_KEY" \
-    -H "Content-Type: application/json" \
-    -d "{
+    curl -s "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=YOUR_KEY" \
+      -H "Content-Type: application/json" -d "{
         \"msgtype\": \"markdown\",
         \"markdown\": {
-            \"content\": \"## 服务器巡检告警\n> 主机: $(hostname)\n> IP: $(hostname -I | awk '{print \$1}')\n> 严重: ${CRITICAL_COUNT} | 警告: ${WARN_COUNT}\n> 请及时处理！\"
+          \"content\": \"## 服务器巡检告警\n> 主机: $(hostname)\n> 严重: ${CRITICAL_COUNT} | 警告: ${WARN_COUNT}\"
         }
-    }"
-fi
-```
-
-### 钉钉告警
-
-```bash
-if (( CRITICAL_COUNT > 0 )); then
-    curl -s -X POST "https://oapi.dingtalk.com/robot/send?access_token=YOUR_TOKEN" \
-    -H "Content-Type: application/json" \
-    -d "{
-        \"msgtype\": \"markdown\",
-        \"markdown\": {
-            \"title\": \"巡检告警\",
-            \"text\": \"## 服务器巡检告警\n- 主机: $(hostname)\n- 严重: ${CRITICAL_COUNT}\n- 警告: ${WARN_COUNT}\n- 请及时处理\"
-        }
-    }"
+      }"
 fi
 ```
 
 ---
 
-## 技术细节
+## 性能（v2.4 提速）
 
-### CPU 采集兼容性
+| 模式 | 耗时（典型机器） |
+|---|---|
+| `--fast` | **8-15 秒** |
+| 默认（含 SSL + 大文件） | 30-60 秒 |
+| 完整（含包管理器更新检查） | 1-3 分钟 |
 
-CPU 使用率采集实现了 4 种方式自动降级，确保在任何发行版上都能正确获取：
-
-```
-top → mpstat → vmstat → /proc/stat
-```
-
-同时做了 0-100 范围限制，防止异常值。
-
-### 脚本特点
-
-| 特性 | 说明 |
-|------|------|
-| 零依赖 | 纯 Bash 编写，无需 Python / Perl / 额外工具 |
-| 1100+ 行 | 覆盖 20+ 项检查维度 |
-| HTML 报告 | 现代卡片式设计，浏览器直接打开 |
-| 三级告警 | 正常 / 警告 / 严重，颜色区分 |
-| 容错处理 | 每个采集项都有兜底，不会因单项失败中断 |
-| HTML 转义 | 防止特殊字符破坏报告格式 |
-| set -euo pipefail | 严格模式，及早发现错误 |
+主要慢点：包管理器联网检查（5-30s）、大文件 find（3-10s），用 `--skip-update-check` 或 `--fast` 可跳过。
 
 ---
 
 ## 兼容性
 
 | 发行版 | 版本 | 状态 |
-|--------|------|------|
-| CentOS | 7 / 8 / Stream | 已测试 |
+|---|---|---|
+| Rocky Linux | 8 / 9 / 10 | 已测试 |
 | RHEL | 7 / 8 / 9 | 已测试 |
-| Ubuntu | 18.04 / 20.04 / 22.04 | 已测试 |
+| CentOS | 7 / 8 / Stream | 兼容 |
+| Ubuntu | 18.04 / 20.04 / 22.04 / 24.04 | 已测试 |
 | Debian | 10 / 11 / 12 | 已测试 |
-| Rocky Linux | 8 / 9 | 兼容 |
+| Kylin | V10 | 已支持 |
 | AlmaLinux | 8 / 9 | 兼容 |
+| SUSE / openSUSE | 12+ | 已支持 |
 
 ---
 
@@ -364,44 +318,55 @@ top → mpstat → vmstat → /proc/stat
 
 ```
 Linux_Auto_Inspection/
-├── linux_inspect.sh      # 巡检脚本（主文件）
-├── README.md             # 项目说明
-└── LICENSE               # 开源协议
+├── linux_inspect.sh                    # 巡检脚本（主文件，2000+ 行）
+├── CHANGELOG.md                        # 版本更新日志
+├── linux_inspect_script_analysis.md    # 代码缺陷分析报告
+├── README.md                           # 项目说明（本文件）
+└── LICENSE                             # MIT 协议
 ```
 
 ---
 
 ## 更新日志
 
-### v2.0 (2026-04-08)
-- 新增：硬件信息采集（厂商/型号/序列号/BIOS）
-- 新增：虚拟化自动检测
-- 新增：磁盘 I/O 统计
-- 新增：大文件扫描（TOP 10 + 近期修改）
-- 新增：文件描述符使用率 + TOP 5 进程
-- 新增：网卡流量统计（RX/TX）、错误/丢包
-- 新增：D 状态进程检测
-- 新增：运行最长进程 TOP 5
-- 新增：Docker 容器/镜像/磁盘占用
-- 新增：定时任务采集（系统 + 用户）
-- 新增：13 项内核参数检查
-- 新增：账户安全审计（UID=0/Shell/密码过期）
-- 新增：SSH 扩展检查（MaxAuthTries/PubkeyAuth）
-- 新增：成功登录记录 + 全局可写文件扫描
-- 新增：系统更新状态 + 安全更新检测
-- 新增：硬件错误日志 + 认证日志检查
-- 新增：失败的服务检测
-- 新增：NTP 源详情
-- 优化：CPU 采集 4 重兼容（top/mpstat/vmstat/proc）
-- 优化：TOP 进程从 5 扩展到 10
-- 优化：服务列表从 15 扩展到 38
-- 优化：概览卡片从 4 个扩展到 6 个
-- 修复：CPU 使用率异常值（1000%）
-- 修复：set -u 下 heredoc 变量未定义报错
+完整版本历史见 [CHANGELOG.md](CHANGELOG.md)。简版概览：
 
-### v1.0 (2026-04-07)
-- 初始版本
-- 基础信息 / CPU / 内存 / 磁盘 / 网络 / 服务 / 安全 / 日志
+### v2.4 (2026-05-10) — 提速 + Token Insight 风排版
+- 🚀 **性能优化** — 服务检查缓存、CPU IDLE 简化、dmesg 缓存、shadow 直读替代 chage、SUID/SGID 合并 find，预估 60s → 8-15s
+- 🆕 `--fast` / `--skip-update-check` / `--skip-ssl-check` 参数
+- 🎨 HTML 模板重构：蓝色 banner + 横向 metadata 字段、17 个章节加蓝色编号、Summary 卡片左图标右数字、4 列基本信息网格
+- 🆕 第 17 章节"总体建议"（短期/中期/长期 3 列卡片，动态生成）
+- 🆕 免责声明区
+- 🛠 巡检 banner + `[N/19] (xx%)` 步骤进度
+
+### v2.3 (2026-05-10) — 缺陷收尾 + 关键新功能
+- 🆕 **SSL 证书过期检查**（letsencrypt / ssl / pki / nginx 路径，<30 天告警）
+- 🆕 **JSON 输出**（`-f json`，含 host / metrics / ssl / updates / thresholds / result 六大字段）
+- 🆕 **HTML 目录导航**（左侧固定 nav，IntersectionObserver scroll-spy）
+- 🆕 **Exit code 语义化**（0/1/2 = 正常/警告/严重）
+- ✅ 修复剩余 6 个轻微缺陷（错误处理 / 代码重复 / 魔法数字 / Bash 版本检查 / 日志详细 / HTML 转义完善）
+- 📊 累计修复 20 项已识别缺陷，全部 close
+
+### v2.2 (2026-05-09) — 完全优化版本
+- ⚙️ CPU 检测函数化（`get_cpu_idle()`）
+- ⚙️ 内存字节级精算
+- ⚙️ SELinux 配置增强（同时显示当前状态 + 配置文件）
+- ⚙️ Docker 权限优雅处理
+- ⚙️ 执行时间统计 + 版本号显示
+- 🐛 here-string 兼容性修复
+- 🐛 OOM_COUNT 算术错误修复
+- 🎨 HTML 表格列宽 CSS 优化
+
+### v2.1 (2026-05-09) — 主要缺陷修复版
+- 🐛 添加依赖检查（缺工具立即退出）
+- 🐛 多包管理器支持（Kylin / RHEL / Debian / SUSE 自动适配）
+- 🐛 `apt update` / `lastb` 权限保护
+- 🐛 空密码账户判断逻辑修正（`!`/`*` 不算空密码）
+- ⚙️ 大文件搜索性能优化（限定路径）
+
+### v2.0 (2026-04-08)
+- 初始版本，1100+ 行，20+ 检查维度
+- 硬件信息、虚拟化检测、磁盘 I/O、大文件、文件描述符、Docker、内核参数等
 
 ---
 
