@@ -42,7 +42,7 @@
 
 参考 Token Insight 风格的现代 dashboard 排版：
 
-![报告样式预览](docs/report-template.jpg)
+![报告样式预览](docs/report-preview.png)
 
 设计要点：
 
